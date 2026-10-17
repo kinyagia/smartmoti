@@ -1,0 +1,31 @@
+# Render Blueprint: Dashboard -> New -> Blueprint -> select this repository.
+# SQLite and uploaded documents live on the persistent disk, which requires a paid plan.
+services:
+  - type: web
+    name: smartmoti
+    runtime: python
+    plan: starter
+    region: frankfurt
+    buildCommand: pip install --no-deps jaclang==0.16.7 && pip install cryptography==50.0.2
+    startCommand: python server.py
+    healthCheckPath: /api/health
+    disk:
+      name: smartmoti-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SMARTMOTI_HOST
+        value: 0.0.0.0
+      - key: SMARTMOTI_HTTPS
+        value: "1"
+      - key: SMARTMOTI_DB
+        value: /var/data/smartmoti.db
+      - key: SMARTMOTI_SECRET_FILE
+        value: /var/data/smartmoti.credentials.key
+      - key: SMARTMOTI_AI_MODEL
+        value: gemini/gemini-3.8-flash
+      # Entered in the Render dashboard during setup; never committed.
+      - key: GEMINI_API_KEY
+        sync: false

@@ -99,7 +99,20 @@ There is no maintenance due-date schedule in the current domain model. The garag
 
 **Documents:** ownership access is enforced for uploaded files. Shared marketplace history excludes document IDs, notes, VIN, registration, and tracking information. Anyone can browse active and reserved listings from real accounts at `/market` without signing in (`GET /api/public/market`). That view returns only the listing summary, the selected history and the seller's first name, with no account or vehicle identifiers. Making an offer requires signing in. Demo listings never appear publicly and stay isolated in demo workspaces.
 
-Before internet hosting, add HTTPS, deployment configuration, authentication abuse controls, organization authorization, backup operations, and a production server. The development server deliberately listens only on `127.0.0.1`.
+**Hosting:** by default the server listens only on `127.0.0.1`. `render.yaml` deploys one instance to Render behind its HTTPS proxy; see **Deploy on Render** below. The host is Python's single-threaded `HTTPServer` on one SQLite file, so requests are handled one at a time and the service cannot scale beyond one instance. Authentication abuse controls (rate limiting, lockout), password reset, email verification and organization authorization are not implemented. Treat a hosted deployment as a pilot.
+
+## Deploy on Render
+
+`render.yaml` is a Render Blueprint. Push the repository to GitHub, then in Render choose **New -> Blueprint**, select the repository, enter `GEMINI_API_KEY` when prompted (leave it blank to rely on personal keys in Settings), and apply. Render builds with the pinned Jac and cryptography versions, starts `python server.py`, and checks `/api/health`.
+
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | Listening port; Render sets it. `--port` overrides it. |
+| `SMARTMOTI_HOST` | Bind address; `0.0.0.0` on Render. Defaults to `127.0.0.1`. |
+| `SMARTMOTI_HTTPS` | `1` behind an HTTPS proxy: accepts `https://` request origins, marks the session cookie `Secure` and sends HSTS. Leave unset locally. |
+| `SMARTMOTI_DB`, `SMARTMOTI_SECRET_FILE` | Database and credential key on the persistent disk at `/var/data`. |
+
+The persistent disk requires a paid Render plan; without it, accounts, records and uploads are lost on every deploy or restart. Back up both `smartmoti.db` and `smartmoti.credentials.key` from the disk. Vercel is unsuitable without a rewrite, because its serverless functions have no persistent disk for SQLite.
 
 ## Verification
 
