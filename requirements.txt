@@ -1,2 +1,3 @@
-jaclang==0.16.7
+# Jac is provided by the host: Jac Hammer runs jaclang 0.34.23; local Windows
+# development installs jaclang==0.16.7 with --no-deps (see README).
 cryptography==50.0.2
