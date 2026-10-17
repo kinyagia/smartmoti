@@ -138,7 +138,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             origin = self.headers.get('Origin')
-            if origin and origin != ('https://' if HTTPS else 'http://') + self.headers.get('Host', ''):
+            host = (self.headers.get('X-Forwarded-Host') if HTTPS else None) or self.headers.get('Host', '')
+            if origin and origin != ('https://' if HTTPS else 'http://') + host:
                 return self.respond(403, {'error': 'Request origin is not allowed'})
             if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                 return self.respond(415, {'error': 'Send JSON'})

@@ -1,0 +1,11 @@
+.git/
+.venv/
+.jac/
+__pycache__/
+data/
+artifacts/
+node_modules/
+.env
+*.pyc
+*.db
+*.pptx

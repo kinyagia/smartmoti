@@ -1,3 +1,13 @@
+---
+title: Smartmoti
+emoji: 🚗
+colorFrom: yellow
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Smartmoti
 
 A Jac project for vehicle lifetime records, fuel management, and a vehicle marketplace, with an elegant public landing page and a responsive garage interface. AI is not required. Blockchain is reserved for optional NFT minting.
@@ -109,10 +119,22 @@ There is no maintenance due-date schedule in the current domain model. The garag
 | --- | --- |
 | `PORT` | Listening port; Render sets it. `--port` overrides it. |
 | `SMARTMOTI_HOST` | Bind address; `0.0.0.0` on Render. Defaults to `127.0.0.1`. |
-| `SMARTMOTI_HTTPS` | `1` behind an HTTPS proxy: accepts `https://` request origins, marks the session cookie `Secure` and sends HSTS. Leave unset locally. |
+| `SMARTMOTI_HTTPS` | `1` behind an HTTPS proxy: accepts `https://` request origins (matching `X-Forwarded-Host` when the proxy sends it, otherwise `Host`), marks the session cookie `Secure` and sends HSTS. Leave unset locally. |
 | `SMARTMOTI_DB`, `SMARTMOTI_SECRET_FILE` | Database and credential key paths. Unset on the free plan, so they default to `data/` in the app folder. |
 
 The Blueprint uses Render's **free plan**, which has no persistent disk. **Hosted accounts, records and uploads are temporary**: they are erased whenever the service restarts, redeploys, or sleeps after 15 minutes without traffic, and the first request after sleeping takes about a minute. **Explore the demo** creates a fresh sample garage each time, so it remains usable for presentations. Do not invite real users to a free deployment. For lasting data, switch to a paid plan, attach a disk at `/var/data`, set `SMARTMOTI_DB=/var/data/smartmoti.db` and `SMARTMOTI_SECRET_FILE=/var/data/smartmoti.credentials.key`, and back up both files. Vercel is unsuitable without a rewrite, because its serverless functions have no persistent disk for SQLite.
+
+## Deploy on Hugging Face Spaces
+
+Render asks for a card even for free services. Hugging Face Spaces runs the `Dockerfile` on free CPU hardware; the YAML block at the top of this README is the Space configuration (`sdk: docker`, `app_port: 7860`). Create a **Docker** Space with the blank template, add `GEMINI_API_KEY` under **Settings -> Variables and secrets** as a secret (optional), then upload the project from this folder:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install huggingface_hub
+.\.venv\Scripts\hf.exe auth login
+.\.venv\Scripts\hf.exe upload <your-username>/smartmoti . . --repo-type=space --exclude ".env" ".venv/*" ".jac/*" "data/*" "artifacts/*" "node_modules/*" "*.pptx" ".git/*"
+```
+
+Open the app at `https://<your-username>-smartmoti.hf.space`, not the huggingface.co Space page: the page embeds the app in a frame, which Smartmoti's security headers refuse. Free Space storage is temporary, with the same data-loss limits as Render's free plan, and a Space sleeps after a period without visitors.
 
 ## Verification
 
