@@ -26,9 +26,9 @@ from client_build import build_client
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ.get('SMARTMOTI_DB', str(ROOT / 'data' / 'smartmoti.db')))
 MAX_BODY = 8 * 1024 * 1024
-# Hosted deployments terminate TLS at a proxy; set SMARTMOTI_HTTPS=1 there.
+# Hosted deployments terminate TLS at a proxy. SMARTMOTI_HTTPS=1 forces HTTPS mode;
+# otherwise a proxy's X-Forwarded-Proto: https enables it per request.
 HTTPS = os.environ.get('SMARTMOTI_HTTPS') == '1'
-COOKIE_FLAGS = 'Path=/; HttpOnly; SameSite=Strict' + ('; Secure' if HTTPS else '')
 
 @contextmanager
 def database():
@@ -70,6 +70,13 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_args):
         pass
 
+    def secure(self):
+        forwarded = self.headers.get('X-Forwarded-Proto', '').split(',')[0].strip().lower()
+        return HTTPS or forwarded == 'https'
+
+    def cookie_flags(self):
+        return 'Path=/; HttpOnly; SameSite=Strict' + ('; Secure' if self.secure() else '')
+
     def respond(self, status, content, mime='application/json', cookie=None, filename=None):
         data = json.dumps(content, allow_nan=False).encode() if mime == 'application/json' else content
         self.send_response(status)
@@ -79,7 +86,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Referrer-Policy', 'same-origin')
         self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
-        if HTTPS:
+        if self.secure():
             self.send_header('Strict-Transport-Security', 'max-age=31536000')
         if cookie:
             self.send_header('Set-Cookie', cookie)
@@ -102,7 +109,7 @@ class Handler(BaseHTTPRequestHandler):
     def session(self, db, user_id):
         token = secrets.token_urlsafe(32)
         db.execute('INSERT INTO sessions VALUES (?,?,?)', (hashlib.sha256(token.encode()).hexdigest(), user_id, time.time() + 604800))
-        return f'smartmoti_session={token}; {COOKIE_FLAGS}; Max-Age=604800'
+        return f'smartmoti_session={token}; {self.cookie_flags()}; Max-Age=604800'
 
     def public_market(self, db, viewer):
         return application.public_market(db, viewer)
@@ -138,8 +145,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             origin = self.headers.get('Origin')
-            host = (self.headers.get('X-Forwarded-Host') if HTTPS else None) or self.headers.get('Host', '')
-            if origin and origin != ('https://' if HTTPS else 'http://') + host:
+            host = self.headers.get('X-Forwarded-Host') or self.headers.get('Host', '')
+            if origin and origin != ('https://' if self.secure() else 'http://') + host:
                 return self.respond(403, {'error': 'Request origin is not allowed'})
             if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                 return self.respond(415, {'error': 'Send JSON'})
@@ -161,7 +168,7 @@ class Handler(BaseHTTPRequestHandler):
                     cookie = SimpleCookie(self.headers.get('Cookie', ''))
                     if cookie.get('smartmoti_session'):
                         db.execute('DELETE FROM sessions WHERE token=?', (hashlib.sha256(cookie['smartmoti_session'].value.encode()).hexdigest(),))
-                    return self.respond(200, {'ok': True}, cookie=f'smartmoti_session=; {COOKIE_FLAGS}; Max-Age=0')
+                    return self.respond(200, {'ok': True}, cookie=f'smartmoti_session=; {self.cookie_flags()}; Max-Age=0')
                 state = load_state(db, user['id'])
                 if path in ['/api/settings/profile', '/api/settings/password']:
                     return account_access.update_account(self, db, user, path, payload)
@@ -189,11 +196,11 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             self.respond(500, {'error': 'The request could not be completed'})
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', 8000)))
     parser.add_argument('--host', default=os.environ.get('SMARTMOTI_HOST', '127.0.0.1'))
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     initialize()
     print(f'Smartmoti · Jac vehicle workspace\nListening on {args.host}:{args.port}', flush=True)
     HTTPServer((args.host, args.port), Handler).serve_forever()

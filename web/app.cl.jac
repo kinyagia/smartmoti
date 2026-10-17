@@ -3165,7 +3165,7 @@ async def _asyncHandler10(event: any) -> any {
         }
         if (kind == "record") {
             payload.full_tank = data.`has("full_tank");
-            del payload.file;
+            Reflect.deleteProperty(payload, "file");
             file = data.get("file");
             if (
                 file.size
