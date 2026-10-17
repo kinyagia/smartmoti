@@ -1,0 +1,9 @@
+.venv/
+.jac/
+__pycache__/
+data/
+artifacts/
+.env
+*.pyc
+*.db
+node_modules/

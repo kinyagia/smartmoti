@@ -1,0 +1,8 @@
+[project]
+name = "smartmoti"
+version = "0.1.0"
+description = "Vehicle lifetime records, fuel ledger, tracking and marketplace"
+entry-point = "domain.jac"
+
+[dependencies]
+jaclang = "==0.16.7"

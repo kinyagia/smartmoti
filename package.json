@@ -1,0 +1,15 @@
+{
+  "name": "smartmoti-ui-checks",
+  "private": true,
+  "scripts": {
+    "audit:jac": "node tools/audit-jac.mjs",
+    "check:hackathon": "node tools/audit-jac.mjs --enforce",
+    "check": "npm run build:client && node --check .jac/client/app.js && node --check .jac/tests/ui.mjs",
+    "test:ui": "node tests/ui.mjs",
+    "test:agent-e2e": ".venv\\Scripts\\jac.exe run tests/agent_e2e_harness.jac",
+    "build:client": ".venv\\Scripts\\jac.exe run client_build.jac --tests"
+  },
+  "devDependencies": {
+    "playwright-core": "1.64.0"
+  }
+}
