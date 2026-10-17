@@ -115,7 +115,9 @@ def fuel_summary(records: list[dict[str, any]]) -> dict[str, any] {
             for r in records
             if r["type"] == "fuel" and not r.get("superseded_by")
         ],
-        key=lambda r : (r["date"], r["odometer"], r["created_at"])
+        key=lambda (r: dict[str, any]) -> tuple {
+            return (r["date"], r["odometer"], r["created_at"]);
+        }
     );
     totals: dict[str, float] = {};
     cycles: list[dict[str, any]] = [];
@@ -184,7 +186,11 @@ def snapshot(state: dict[str, any]) -> dict[str, any] {
             ]
         );
         vehicle["records"] = sorted(
-            records, key=lambda r : (str(r["date"]), str(r["created_at"])), reverse=True
+            records,
+            key=lambda (r: dict[str, any]) -> tuple {
+                return (str(r["date"]), str(r["created_at"]));
+            },
+            reverse=True
         );
         vehicles.append(vehicle);
     }

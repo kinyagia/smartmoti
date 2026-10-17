@@ -14,7 +14,6 @@ def applyNavigation() -> any {
 }
 
 def applyTheme() -> any {
-    global themeMode;
     themeMode = themePreference;
     document.documentElement.dataset.theme = themeMode;
     document.documentElement.dataset.themePreference = themePreference;
@@ -216,7 +215,6 @@ async def api(path: any, payload: any) -> any {
 }
 
 async def refresh() -> any {
-    global state,selected;
     state = await api("state");
     if (
         not state.vehicles.some(lambda (v: any) -> any { return (v.id == selected); })
@@ -1196,7 +1194,6 @@ def issueForm() -> any {
 }
 
 async def submitIssue(form: any) -> any {
-    global issueAssessment,assistantVehicle,page;
     data = Object.fromEntries(new(FormData, form).entries());
     owner = state.user.id;
     generation = agentGeneration;
@@ -1574,7 +1571,6 @@ def proposalCard(proposal: any) -> any {
 }
 
 async def sendAgentMessage() -> any {
-    global agentSession,agentBusy,agentDraft;
     generation = agentGeneration;
     message = agentDraft.trim();
     if ((not message) or agentBusy) {
@@ -1631,7 +1627,6 @@ async def sendAgentMessage() -> any {
 }
 
 async def decideProposal(id: any, approve: any, button: any) -> any {
-    global assistantVehicle,selected;
     proposal = agentMessages.flatMap(
         lambda (m: any) -> any { return (m.proposals or []); }
     ).find(
@@ -1673,7 +1668,6 @@ async def decideProposal(id: any, approve: any, button: any) -> any {
 }
 
 async def restoreAgentConversation() -> any {
-    global agentSession,agentMessages,assistantVehicle;
     generation = agentGeneration;
     owner = state.user.id;
     response = await api("agent/conversation");
@@ -1936,7 +1930,6 @@ def formWrap(kind: any, content: any, label: any, extra: any = "") -> any {
 }
 
 def auth(mode: any) -> any {
-    global authMode;
     authMode = mode;
     openModal(
         ("Start your vehicle story." if (mode == "signup") else "Back to your garage."),
@@ -2580,7 +2573,6 @@ def tourGuide() -> any {
 }
 
 def showTour(index: any) -> any {
-    global page,selected,passportTab,assistantVehicle,tourStep;
     tourStep = Math.max(0, Math.min((tourSteps.length - 1), index));
     page = tourSteps[tourStep].page;
     selected = (
@@ -2650,13 +2642,11 @@ def publicListingDetails(id: any) -> any {
 }
 
 async def openPublicMarket() -> any {
-    global publicListings;
     publicListings = (await api("public/market")).listings;
     publicMarket();
 }
 
 async def bootstrap() -> any {
-    global page;
     if (location.pathname == "/market") {
         (await openPublicMarket());
         return;
@@ -2733,7 +2723,6 @@ with entry {
     document.addEventListener(
         "change",
         lambda (event: any) -> any {
-            global selected,assistantVehicle;
             if (event.target.id == "assistant-context") {
                 assistantVehicle = event.target.value;
                 render();
@@ -2756,7 +2745,6 @@ with entry {
     document.addEventListener(
         "input",
         lambda (event: any) -> any {
-            global marketQuery,agentDraft;
             if (event.target.id == "agent-message") {
                 agentDraft = event.target.value;
             }
@@ -2803,7 +2791,6 @@ with entry {
     document.addEventListener(
         "click",
         lambda (event: any) -> any {
-            global themePreference;
             listing = event.target.closest("[data-public-listing]");
             if listing { publicListingDetails(listing.dataset.publicListing); return; }
             choice = event.target.closest("[data-theme-choice]");
@@ -2816,7 +2803,6 @@ with entry {
     document.addEventListener(
         "input",
         lambda (event: any) -> any {
-            global publicQuery;
             if event.target.id != "public-market-search" { return; }
             publicQuery = event.target.value;
             document.querySelector("#public-market-results").innerHTML = publicMarketCards();
@@ -2825,7 +2811,6 @@ with entry {
     compactNavigation.addEventListener("change", applyNavigation);
     bootstrap().catch(
         lambda (error: any) -> any {
-            global state;
             state = None;
             landing();
             if (error.status != 401) {
@@ -2836,7 +2821,6 @@ with entry {
 }
 
 async def _asyncHandler9(event: any) -> any {
-    global state,page,selected,passportTab,agentGeneration,agentMessages,agentSession,agentBusy,assistantVehicle,agentDraft,tourOpen,tourStep,themeMode,themePreference;
     if (event.target.closest(".skip-link")) {
         document.querySelector("#main-content").focus();
     }
@@ -3128,7 +3112,6 @@ async def _asyncHandler9(event: any) -> any {
 }
 
 async def _asyncHandler10(event: any) -> any {
-    global page,selected;
     form = event.target;
     if (not form.dataset.form) {
         return;
