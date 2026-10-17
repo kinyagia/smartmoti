@@ -1,7 +1,7 @@
 # Checks every push to main, then optionally deploys.
-# Jac Hammer redeploys from GitHub on its own; the jac-hammer job reproduces its
-# startup (jaclang 0.34.23, `jac install`, `jac start` on :8000) so a push that
-# would break the hosted app fails here first.
+# The jac-hammer job reproduces Jac Hammer's startup (jaclang 0.34.23,
+# `jac install`, `jac start` on :8000) so a push that would break the hosted app
+# fails here first. Jac Hammer keeps its own copy of the files; sync it after pushing.
 # Hugging Face deploy runs only when the HF_SPACE variable and HF_TOKEN secret exist.
 name: Check and deploy
 
