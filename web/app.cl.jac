@@ -137,17 +137,21 @@ glob icon: any = lambda (name: any) -> any { return (
          ) + "\"/></svg>"
      ); };
 
-glob esc: any = lambda (value: any) -> any { return String(
-         (value if (value != None and value != globalThis.undefined) else "")
-     ).replace(
-         new(RegExp, "[&<>\"']", "g"),
-         lambda (c: any) -> any { return {
-             "&": "&amp;",
-             "<": "&lt;",
-             ">": "&gt;",
-             "\"": "&quot;",
-             "'": "&#39;"
-         }[c]; }
+# Call the native String.prototype.replace: Jac's string polyfill treats
+# .replace() as Python's str.replace and would stringify the callback.
+glob esc: any = lambda (value: any) -> any { return Reflect.apply(
+         String.prototype.replace,
+         String((value if (value != None and value != globalThis.undefined) else "")),
+         [
+             new(RegExp, "[&<>\"']", "g"),
+             lambda (c: any) -> any { return {
+                 "&": "&amp;",
+                 "<": "&lt;",
+                 ">": "&gt;",
+                 "\"": "&quot;",
+                 "'": "&#39;"
+             }[c]; }
+         ]
      ); };
 
 glob fmt: any = lambda (value: any) -> any { return new(
