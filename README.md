@@ -111,6 +111,16 @@ There is no maintenance due-date schedule in the current domain model. The garag
 
 **Hosting:** by default the server listens only on `127.0.0.1`. `render.yaml` deploys one instance to Render behind its HTTPS proxy; see **Deploy on Render** below. The host is Python's single-threaded `HTTPServer` on one SQLite file, so requests are handled one at a time and the service cannot scale beyond one instance. Authentication abuse controls (rate limiting, lockout), password reset, email verification and organization authorization are not implemented. Treat a hosted deployment as a pilot.
 
+## Deploy on Jac Hammer
+
+Jac Hammer runs **jaclang 0.34.23** and starts the `jac.toml` entry point with `jac start`, expecting the app on port 8000. `main.jac` is that entry point: it starts the Smartmoti host (`server.py`) on `0.0.0.0` and `$PORT` (default 8000). `jac.toml` and `requirements.txt` deliberately do not pin `jaclang`, because the host provides it; pinning 0.16.7 makes Jac Hammer's dependency install fail. Behind Jac Hammer's HTTPS proxy, the server reads `X-Forwarded-Proto` and `X-Forwarded-Host`, so sign-up and login work without setting `SMARTMOTI_HTTPS`. Add `GEMINI_API_KEY` in Jac Hammer's environment settings for server AI. Jac Hammer redeploys after each push to `main`.
+
+The source is compatible with both jaclang 0.16.7 (local Windows development) and 0.34.23: lambdas use the braced form with an explicit `return`, module state uses `glob` without `global` statements, and client code avoids `del`. Under 0.34.23, `jac check` reports type errors for browser globals and untyped JSON in `web/app.cl.jac` and the test suites; the Jac guide documents these as checker limitations, and they do not affect the build or runtime. Hosted storage on Jac Hammer is not guaranteed to persist; treat it as a demo deployment.
+
+## Automated checks and deployment
+
+`.github/workflows/deploy.yml` runs on every push to `main`: the backend unit tests on jaclang 0.16.7, and a Jac Hammer startup check that downloads the official jaclang 0.34.23 Linux build (checksum-verified), runs `jac install` and `jac start`, and probes health, the web client and an HTTPS-proxied sign-up. To also deploy to Hugging Face Spaces automatically, add a repository variable `HF_SPACE` (for example `kinyagia/smartmoti`) and a secret `HF_TOKEN` with write access under **Settings -> Secrets and variables -> Actions**; the deploy job runs only after both checks pass.
+
 ## Deploy on Render
 
 `render.yaml` is a Render Blueprint. Push the repository to GitHub, then in Render choose **New -> Blueprint**, select the repository, enter `GEMINI_API_KEY` when prompted (leave it blank to rely on personal keys in Settings), and apply. Render builds with the pinned Jac and cryptography versions, starts `python server.py`, and checks `/api/health`.

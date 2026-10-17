@@ -8,6 +8,8 @@ AI reviews and editable marketplace drafts use `vehicle_ai.jac` with typed Gemin
 
 Keep demo workspaces isolated from real accounts. Never fabricate missing live tracking or fuel data. Marketplace history must not expose private notes, documents, VIN, registration, or precise location history.
 
+Keep Jac sources compatible with jaclang 0.16.7 (local) and 0.34.23 (Jac Hammer): braced lambdas with explicit `return`, `glob` module state without `global` statements, no `del` in client code. `main.jac` is the hosted entry point; do not pin `jaclang` in `jac.toml` or `requirements.txt`. The GitHub workflow verifies 0.34.23 startup on every push.
+
 After domain changes, run `.venv\Scripts\jac.exe check domain.jac --nowarn` and `.venv\Scripts\python.exe -m unittest discover -s tests -v`. For interface changes, run `npm.cmd run check` and the applicable browser checks in `tests/ui.mjs` against the local server. Document any changed integration limits in `README.md`.
 
 The source folders for Neurocar and Omni are reference projects; keep them unchanged unless the user requests otherwise.

@@ -1,0 +1,84 @@
+# Checks every push to main, then optionally deploys.
+# Jac Hammer redeploys from GitHub on its own; the jac-hammer job reproduces its
+# startup (jaclang 0.34.23, `jac install`, `jac start` on :8000) so a push that
+# would break the hosted app fails here first.
+# Hugging Face deploy runs only when the HF_SPACE variable and HF_TOKEN secret exist.
+name: Check and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Backend tests (jaclang 0.16.7)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install --no-deps jaclang==0.16.7
+          pip install cryptography==50.0.2
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+  jac-hammer:
+    name: Jac Hammer startup (jaclang 0.34.23)
+    runs-on: ubuntu-latest
+    env:
+      JAC_VERSION: "0.34.23"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Jac
+        run: |
+          base="https://github.com/jaseci-labs/jac/releases/download/v${JAC_VERSION}"
+          file="jac-${JAC_VERSION}-linux-x86_64"
+          mkdir -p "$RUNNER_TEMP/jac" && cd "$RUNNER_TEMP/jac"
+          curl -fsSL -o "$file" "$base/$file"
+          curl -fsSL -o "$file.sha256" "$base/$file.sha256"
+          echo "$(awk '{print $1}' "$file.sha256")  $file" | sha256sum -c -
+          chmod +x "$file" && ln -s "$PWD/$file" "$PWD/jac"
+          echo "$RUNNER_TEMP/jac" >> "$GITHUB_PATH"
+      - name: Install project dependencies
+        run: jac install
+      - name: Start and probe
+        run: |
+          jac start --dev > "$RUNNER_TEMP/jac-start.log" 2>&1 &
+          for i in $(seq 1 180); do curl -fs -o /dev/null http://127.0.0.1:8000/api/health && break; sleep 1; done
+          base=http://127.0.0.1:8000
+          curl -fsS "$base/api/health"; echo
+          curl -fsS -o /dev/null "$base/"
+          curl -fsS -o /dev/null "$base/app.js"
+          curl -fsS -X POST "$base/api/signup" \
+            -H 'Content-Type: application/json' \
+            -H 'X-Forwarded-Proto: https' -H 'X-Forwarded-Host: ci.example' -H 'Origin: https://ci.example' \
+            -d '{"name":"CI","email":"ci@example.com","password":"correcthorse1"}'; echo
+      - name: Startup log
+        if: always()
+        run: cat "$RUNNER_TEMP/jac-start.log" || true
+
+  huggingface:
+    name: Deploy to Hugging Face Spaces
+    needs: [tests, jac-hammer]
+    if: vars.HF_SPACE != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Upload Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          pip install -q huggingface_hub
+          hf upload "${{ vars.HF_SPACE }}" . . --repo-type=space \
+            --exclude ".git/*" ".github/*" "*.pptx" "tests/*" "tools/*" \
+            --commit-message "Deploy ${GITHUB_SHA::7}"
