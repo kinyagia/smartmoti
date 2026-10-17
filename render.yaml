@@ -1,18 +1,17 @@
 # Render Blueprint: Dashboard -> New -> Blueprint -> select this repository.
-# SQLite and uploaded documents live on the persistent disk, which requires a paid plan.
+# Free plan: no persistent disk. Accounts, records and uploads are erased whenever
+# the service restarts, redeploys or sleeps after 15 idle minutes. Demo use only.
+# For lasting data, use a paid plan with a disk at /var/data and point
+# SMARTMOTI_DB and SMARTMOTI_SECRET_FILE there.
 services:
   - type: web
     name: smartmoti
     runtime: python
-    plan: starter
+    plan: free
     region: frankfurt
     buildCommand: pip install --no-deps jaclang==0.16.7 && pip install cryptography==50.0.2
     startCommand: python server.py
     healthCheckPath: /api/health
-    disk:
-      name: smartmoti-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
@@ -20,10 +19,6 @@ services:
         value: 0.0.0.0
       - key: SMARTMOTI_HTTPS
         value: "1"
-      - key: SMARTMOTI_DB
-        value: /var/data/smartmoti.db
-      - key: SMARTMOTI_SECRET_FILE
-        value: /var/data/smartmoti.credentials.key
       - key: SMARTMOTI_AI_MODEL
         value: gemini/gemini-3.8-flash
       # Entered in the Render dashboard during setup; never committed.

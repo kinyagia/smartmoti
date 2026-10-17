@@ -110,9 +110,9 @@ There is no maintenance due-date schedule in the current domain model. The garag
 | `PORT` | Listening port; Render sets it. `--port` overrides it. |
 | `SMARTMOTI_HOST` | Bind address; `0.0.0.0` on Render. Defaults to `127.0.0.1`. |
 | `SMARTMOTI_HTTPS` | `1` behind an HTTPS proxy: accepts `https://` request origins, marks the session cookie `Secure` and sends HSTS. Leave unset locally. |
-| `SMARTMOTI_DB`, `SMARTMOTI_SECRET_FILE` | Database and credential key on the persistent disk at `/var/data`. |
+| `SMARTMOTI_DB`, `SMARTMOTI_SECRET_FILE` | Database and credential key paths. Unset on the free plan, so they default to `data/` in the app folder. |
 
-The persistent disk requires a paid Render plan; without it, accounts, records and uploads are lost on every deploy or restart. Back up both `smartmoti.db` and `smartmoti.credentials.key` from the disk. Vercel is unsuitable without a rewrite, because its serverless functions have no persistent disk for SQLite.
+The Blueprint uses Render's **free plan**, which has no persistent disk. **Hosted accounts, records and uploads are temporary**: they are erased whenever the service restarts, redeploys, or sleeps after 15 minutes without traffic, and the first request after sleeping takes about a minute. **Explore the demo** creates a fresh sample garage each time, so it remains usable for presentations. Do not invite real users to a free deployment. For lasting data, switch to a paid plan, attach a disk at `/var/data`, set `SMARTMOTI_DB=/var/data/smartmoti.db` and `SMARTMOTI_SECRET_FILE=/var/data/smartmoti.credentials.key`, and back up both files. Vercel is unsuitable without a rewrite, because its serverless functions have no persistent disk for SQLite.
 
 ## Verification
 
